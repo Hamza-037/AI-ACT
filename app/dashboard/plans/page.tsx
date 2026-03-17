@@ -48,7 +48,7 @@ export default async function PlansPage() {
         </Badge>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {PLANS_ORDER.map((planId) => (
           <PlanCard
             key={planId}
@@ -63,9 +63,8 @@ export default async function PlansPage() {
         ))}
       </div>
 
-      <p className="text-xs text-muted-foreground text-center">
-        Tous les prix sont HT. Facturation mensuelle. Annulation a tout moment.
-        Stripe gere les paiements de maniere securisee.
+      <p className="text-xs text-slate-400 text-center">
+        Prix HT · Facturation mensuelle · Annulation a tout moment
       </p>
     </div>
   )

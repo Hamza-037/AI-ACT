@@ -1,244 +1,201 @@
 import Link from 'next/link'
-import { Bot, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
-import { StatCard } from '@/components/dashboard/StatCard'
-import { ConformiteScore } from '@/components/dashboard/ConformiteScore'
-import { createServerClient } from '@/lib/supabase/server'
+import { Bot, CheckCircle2, Clock, ArrowRight, BookOpen, ClipboardList, GraduationCap } from 'lucide-react'
+import { getChecklist } from '@/lib/actions/checklist'
+import { getSystems } from '@/lib/actions/systemes'
 import { calculerScore, calculerJoursRestants } from '@/lib/utils/conformite'
-import { OBLIGATION_LABELS, OBLIGATION_DEADLINES } from '@/types/shared.types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRecord = Record<string, any>
-
-async function getDashboardData() {
-  const supabase = await createServerClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as unknown as any
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = (await db
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()) as { data: AnyRecord | null }
-
-  if (!profile?.organization_id) return null
-
-  const orgId = profile.organization_id as string
-
-  // Systèmes IA
-  const { count: countSystemes } = (await db
-    .from('systemes_ia')
-    .select('id', { count: 'exact', head: true })
-    .eq('organization_id', orgId)) as { count: number | null }
-
-  // Checklist items
-  const { data: checklistItems } = (await db
-    .from('checklist_items')
-    .select('obligation_code, statut')
-    .eq('organization_id', orgId)) as { data: { obligation_code: string; statut: string }[] | null }
-
-  // AI Literacy completions
-  const { count: countLiteracy } = (await db
-    .from('ai_literacy_completions')
-    .select('id', { count: 'exact', head: true })
-    .eq('organization_id', orgId)) as { count: number | null }
-
-  const items: { obligation_code: string; statut: string }[] = checklistItems ?? []
-  const score = calculerScore(items)
-  const completees = items.filter((i) => i.statut === 'conforme').length
-  const totalItems = items.length
-  const joursRestants = calculerJoursRestants()
-
-  // Vérifier AI Literacy
-  const aiLiteracyItem = items.find((i) => i.obligation_code === 'ai_literacy')
-  const aiLiteracyNonCommencee = !aiLiteracyItem || aiLiteracyItem.statut === 'non_evalue'
-
-  return {
-    countSystemes: countSystemes ?? 0,
-    score,
-    completees,
-    totalItems,
-    countLiteracy: countLiteracy ?? 0,
-    joursRestants,
-    aiLiteracyNonCommencee,
-    checklistItems: items,
-  }
-}
+import { OBLIGATION_LABELS, OBLIGATION_CODES } from '@/types/shared.types'
+import { Progress } from '@/components/ui/progress'
 
 export default async function DashboardPage() {
-  const data = await getDashboardData()
+  const [checklistResult, systemsResult] = await Promise.all([
+    getChecklist(),
+    getSystems(),
+  ])
 
-  if (!data) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold mb-6">Tableau de bord</h1>
-        <p className="text-muted-foreground">
-          Chargement des données...{' '}
-          <Link href="/onboarding" className="text-primary hover:underline">
-            Configurer mon compte
-          </Link>
-        </p>
-      </div>
-    )
-  }
+  const items = checklistResult.success ? checklistResult.data : []
+  const systems = systemsResult.success ? systemsResult.data : []
 
-  const {
-    countSystemes,
-    score,
-    completees,
-    totalItems,
-    countLiteracy,
-    joursRestants,
-    aiLiteracyNonCommencee,
-    checklistItems,
-  } = data
+  const score = calculerScore(items)
+  const completees = items.filter((i) => i.statut === 'conforme').length
+  const totalObligations = OBLIGATION_CODES.length
+  const joursRestants = calculerJoursRestants()
 
-  const scoreVariante =
-    score >= 67 ? 'success' : score >= 34 ? 'warning' : 'danger'
+  const scoreColor =
+    score >= 67
+      ? 'bg-green-500'
+      : score >= 34
+        ? 'bg-orange-400'
+        : 'bg-red-500'
 
-  const joursVariante =
-    joursRestants < 30 ? 'danger' : joursRestants < 90 ? 'warning' : 'default'
+  // Actions prioritaires : 3 premières obligations non conformes ou non évaluées
+  const actionsPrioritaires = OBLIGATION_CODES.filter((code) => {
+    const item = items.find((i) => i.obligation_code === code)
+    const statut = item?.statut ?? 'non_evalue'
+    return statut === 'non_conforme' || statut === 'non_evalue'
+  }).slice(0, 3)
 
-  // Obligations avec deadlines pour "Prochaines deadlines"
-  const obligationCodes = Object.keys(OBLIGATION_LABELS) as Array<
-    keyof typeof OBLIGATION_LABELS
-  >
-  const deadlineItems = obligationCodes.slice(0, 5).map((code) => {
-    const item = checklistItems.find((i) => i.obligation_code === code)
-    return {
-      code,
-      label: OBLIGATION_LABELS[code],
-      deadline: OBLIGATION_DEADLINES[code],
-      statut: (item?.statut ?? 'non_evalue') as string,
-    }
-  })
-
-  const statutLabel: Record<string, string> = {
-    conforme: 'Conforme',
-    en_cours: 'En cours',
-    non_conforme: 'Non conforme',
-    non_evalue: 'A evaluer',
-  }
-  const statutColor: Record<string, string> = {
-    conforme: 'text-green-600',
-    en_cours: 'text-orange-500',
-    non_conforme: 'text-red-600',
-    non_evalue: 'text-muted-foreground',
-  }
+  const modules = [
+    {
+      href: '/dashboard/systemes',
+      label: 'Registre IA',
+      description: 'Inventoriez et gérez vos systèmes IA',
+      icon: Bot,
+      iconColor: 'text-violet-500',
+      bgColor: 'bg-violet-50',
+    },
+    {
+      href: '/dashboard/checklist',
+      label: 'Checklist',
+      description: 'Suivez vos obligations réglementaires',
+      icon: ClipboardList,
+      iconColor: 'text-blue-500',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      href: '/dashboard/literacy',
+      label: 'AI Literacy',
+      description: 'Formez vos équipes à l\'IA',
+      icon: GraduationCap,
+      iconColor: 'text-emerald-500',
+      bgColor: 'bg-emerald-50',
+    },
+  ]
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Tableau de bord</h1>
+    <div className="space-y-8">
+      {/* En-tête */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Bonjour</h1>
+          <p className="text-sm text-slate-500 mt-1">Voici l&apos;état de votre conformité AI Act</p>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <span className="text-4xl font-extrabold text-slate-900">{score}%</span>
+          <div className="w-48">
+            <div className="h-2.5 w-full rounded-full bg-slate-200 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${scoreColor}`}
+                style={{ width: `${score}%` }}
+              />
+            </div>
+          </div>
+          <span className="text-xs text-slate-400">Score de conformité global</span>
+        </div>
+      </div>
 
-      {/* 4 StatCards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <StatCard
-          titre="Systemes IA inventories"
-          valeur={countSystemes}
-          description="Registre des outils IA"
-          icon={<Bot className="h-5 w-5" />}
-          variante={countSystemes === 0 ? 'warning' : 'default'}
-        />
-        <ConformiteScore score={score} completees={completees} total={totalItems || 8} />
-        <StatCard
-          titre="Salaries formes AI Literacy"
-          valeur={countLiteracy}
-          description="Obligation en vigueur"
-          icon={<CheckCircle2 className="h-5 w-5" />}
-          variante={countLiteracy === 0 ? 'danger' : 'success'}
-        />
-        <StatCard
-          titre="Jours avant deadline"
-          valeur={joursRestants}
-          description="2 aout 2026"
-          icon={<Clock className="h-5 w-5" />}
-          variante={joursVariante}
-        />
+      {/* 4 cartes métriques */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Score conformité */}
+        <div className="rounded-2xl border bg-white p-5 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500">Score de conformité</span>
+            <BookOpen className="h-5 w-5 text-slate-300" />
+          </div>
+          <p className="text-3xl font-bold text-slate-900">{score}%</p>
+          <Progress value={score} className="h-1.5" />
+        </div>
+
+        {/* Obligations complétées */}
+        <div className="rounded-2xl border bg-white p-5 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500">Obligations complétées</span>
+            <CheckCircle2 className="h-5 w-5 text-slate-300" />
+          </div>
+          <p className="text-3xl font-bold text-slate-900">
+            {completees}/{totalObligations}
+          </p>
+          <p className="text-xs text-slate-400">
+            {totalObligations - completees} obligation{totalObligations - completees !== 1 ? 's' : ''} restante{totalObligations - completees !== 1 ? 's' : ''}
+          </p>
+        </div>
+
+        {/* Jours avant deadline */}
+        <div className="rounded-2xl border bg-white p-5 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500">Jours avant deadline</span>
+            <Clock className={`h-5 w-5 ${joursRestants < 90 ? 'text-red-400' : 'text-slate-300'}`} />
+          </div>
+          <p className={`text-3xl font-bold ${joursRestants < 90 ? 'text-red-600' : 'text-slate-900'}`}>
+            {joursRestants}
+          </p>
+          <p className="text-xs text-slate-400">2 août 2026</p>
+        </div>
+
+        {/* Systèmes IA */}
+        <div className="rounded-2xl border bg-white p-5 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500">Systèmes IA inventoriés</span>
+            <Bot className="h-5 w-5 text-slate-300" />
+          </div>
+          <p className="text-3xl font-bold text-slate-900">{systems.length}</p>
+          <p className="text-xs text-slate-400">
+            {systems.length === 0 ? 'Aucun système enregistré' : `Dans votre registre`}
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Actions prioritaires */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Actions prioritaires</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {aiLiteracyNonCommencee && (
-              <div className="flex items-start gap-3 rounded-md bg-red-50 border border-red-200 p-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-red-800">Formation AI Literacy</p>
-                  <p className="text-xs text-red-600">
-                    Obligation deja en vigueur depuis fevrier 2025
-                  </p>
-                </div>
-              </div>
-            )}
-            {countSystemes === 0 && (
-              <div className="flex items-start gap-3 rounded-md bg-orange-50 border border-orange-200 p-3">
-                <Bot className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-orange-800">Inventaire IA vide</p>
-                  <p className="text-xs text-orange-600">
-                    Commencez par inventorier vos outils IA
-                  </p>
-                </div>
-              </div>
-            )}
-            {score < 50 && totalItems > 0 && (
-              <div className="flex items-start gap-3 rounded-md bg-yellow-50 border border-yellow-200 p-3">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-yellow-800">Conformite insuffisante</p>
-                  <p className="text-xs text-yellow-600">
-                    {totalItems - completees} obligation
-                    {totalItems - completees > 1 ? 's' : ''} en attente
-                  </p>
-                </div>
-              </div>
-            )}
-            {!aiLiteracyNonCommencee && countSystemes > 0 && score >= 50 && (
-              <p className="text-sm text-muted-foreground">
-                Bonne progression ! Continuez sur la checklist.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Prochaines deadlines */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Prochaines deadlines</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {deadlineItems.map((item) => (
-                <Link
-                  key={item.code}
-                  href="/dashboard/checklist"
-                  className="flex items-center justify-between rounded-md p-2 hover:bg-accent transition-colors group"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate group-hover:text-primary">
-                      {item.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{item.deadline}</p>
-                  </div>
-                  <span
-                    className={`text-xs font-medium shrink-0 ml-2 ${statutColor[item.statut] ?? 'text-muted-foreground'}`}
+        <div className="rounded-2xl border bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900 mb-4">Actions prioritaires</h2>
+          {actionsPrioritaires.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              Toutes les obligations sont traitées. Excellent travail.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {actionsPrioritaires.map((code) => {
+                const item = items.find((i) => i.obligation_code === code)
+                const statut = item?.statut ?? 'non_evalue'
+                return (
+                  <Link
+                    key={code}
+                    href={`/dashboard/checklist/${code}`}
+                    className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3 hover:border-slate-300 hover:bg-white transition-all group"
                   >
-                    {statutLabel[item.statut] ?? 'A evaluer'}
-                  </span>
-                </Link>
-              ))}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate group-hover:text-slate-900">
+                        {OBLIGATION_LABELS[code]}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {statut === 'non_conforme' ? 'Non conforme' : 'A évaluer'}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-300 shrink-0 ml-3 group-hover:text-slate-500 transition-colors" />
+                  </Link>
+                )
+              })}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
+
+        {/* Modules */}
+        <div className="rounded-2xl border bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900 mb-4">Modules</h2>
+          <div className="space-y-3">
+            {modules.map((mod) => {
+              const Icon = mod.icon
+              return (
+                <Link
+                  key={mod.href}
+                  href={mod.href}
+                  className="flex items-center gap-4 rounded-xl border border-slate-100 p-3 hover:border-slate-300 hover:bg-slate-50 transition-all group"
+                >
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${mod.bgColor}`}>
+                    <Icon className={`h-5 w-5 ${mod.iconColor}`} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-800 group-hover:text-slate-900">
+                      {mod.label}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">{mod.description}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-300 shrink-0 group-hover:text-slate-500 transition-colors" />
+                </Link>
+              )
+            })}
+          </div>
+        </div>
       </div>
     </div>
   )

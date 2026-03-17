@@ -7,8 +7,8 @@ export const metadata = {
 
 export default function QuizPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
+    <main className="min-h-screen bg-white py-12 px-4">
+      <div className="max-w-xl mx-auto">
         <QuizWizard />
       </div>
     </main>

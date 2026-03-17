@@ -2,8 +2,6 @@
 
 import { useTransition } from 'react'
 import { Check } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { createCheckoutSession } from '@/lib/actions/billing'
 import type { Plan } from '@/types/shared.types'
 
@@ -31,53 +29,62 @@ export function PlanCard({ planId, nom, prix, features, isCurrentPlan, priceId, 
   }
 
   return (
-    <Card className={`relative flex flex-col ${recommended ? 'border-primary shadow-md' : ''}`}>
+    <div
+      className={`relative flex flex-col rounded-2xl border bg-white p-6 shadow-sm transition-shadow hover:shadow-md ${
+        recommended
+          ? 'border-2 border-blue-600 shadow-md'
+          : 'border-slate-200'
+      } ${isCurrentPlan ? 'bg-slate-50' : ''}`}
+    >
       {recommended && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <Badge className="bg-primary text-primary-foreground text-xs px-3">Recommande</Badge>
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+          <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-blue-600 text-white">
+            Recommande
+          </span>
         </div>
       )}
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{nom}</CardTitle>
-        <div className="flex items-baseline gap-1 mt-1">
+
+      <div className="mb-4">
+        <p className="text-base font-semibold text-slate-900">{nom}</p>
+        <div className="flex items-baseline gap-1 mt-2">
           {prix === 0 ? (
-            <span className="text-3xl font-bold">Gratuit</span>
+            <span className="text-4xl font-bold text-slate-900">Gratuit</span>
           ) : (
             <>
-              <span className="text-3xl font-bold">{prix}€</span>
-              <span className="text-muted-foreground text-sm">/mois</span>
+              <span className="text-4xl font-bold text-slate-900">{prix}</span>
+              <span className="text-sm text-slate-400">€ / mois</span>
             </>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="flex flex-col flex-1 gap-4">
-        <ul className="space-y-2 flex-1">
-          {features.map((feature) => (
-            <li key={feature} className="flex items-start gap-2 text-sm">
-              <Check className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
-        {isCurrentPlan ? (
-          <div className="inline-flex items-center justify-center h-11 w-full rounded-md bg-muted text-muted-foreground text-sm font-medium">
-            Plan actuel
-          </div>
-        ) : planId === 'gratuit' ? (
-          <div className="inline-flex items-center justify-center h-11 w-full rounded-md border border-input text-sm font-medium text-muted-foreground">
-            Inclus
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={handleSelect}
-            disabled={isPending}
-            className="inline-flex items-center justify-center h-11 w-full rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {isPending ? 'Redirection...' : 'Choisir ce plan'}
-          </button>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+
+      <ul className="flex-1 space-y-2 mb-6">
+        {features.map((feature) => (
+          <li key={feature} className="flex items-start gap-2">
+            <Check className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+            <span className="text-sm text-slate-600">{feature}</span>
+          </li>
+        ))}
+      </ul>
+
+      {isCurrentPlan ? (
+        <div className="inline-flex items-center justify-center h-11 w-full rounded-xl bg-slate-100 text-slate-400 text-sm font-medium cursor-default">
+          Votre plan actuel
+        </div>
+      ) : planId === 'gratuit' ? (
+        <div className="inline-flex items-center justify-center h-11 w-full rounded-xl border border-slate-200 text-sm font-medium text-slate-400 cursor-default">
+          Inclus
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleSelect}
+          disabled={isPending}
+          className="inline-flex items-center justify-center h-11 w-full rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+        >
+          {isPending ? 'Redirection...' : 'Choisir ce plan'}
+        </button>
+      )}
+    </div>
   )
 }
