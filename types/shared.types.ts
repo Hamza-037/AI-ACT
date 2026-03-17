@@ -76,3 +76,14 @@ export type Profile = {
   onboarding_completed: boolean
   created_at: string
 }
+
+export const OBLIGATION_CODES: ObligationCode[] = [
+  'ai_literacy',
+  'inventaire',
+  'supervision_humaine',
+  'notice_personnes',
+  'retention_logs',
+  'fria',
+  'signalement_incidents',
+  'politique_interne',
+]
