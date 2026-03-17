@@ -12,3 +12,17 @@ export const systemeIASchema = z.object({
 })
 
 export type SystemeIAInput = z.infer<typeof systemeIASchema>
+
+export const createSystemeSchema = z.object({
+  nom: z.string().min(1, 'Le nom est obligatoire').max(200),
+  fournisseur: z.string().max(200).nullable().optional(),
+  usage: z.string().max(1000).nullable().optional(),
+  departement: z
+    .enum(['RH', 'Finance', 'Marketing', 'Support', 'IT', 'Direction', 'Autre'])
+    .nullable()
+    .optional(),
+  decisions_autonomes: z.boolean().default(false),
+  notes: z.string().max(2000).nullable().optional(),
+})
+
+export type CreateSystemeInput = z.infer<typeof createSystemeSchema>

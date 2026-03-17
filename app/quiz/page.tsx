@@ -1,10 +1,16 @@
+import { QuizWizard } from '@/components/quiz/QuizWizard'
+
+export const metadata = {
+  title: "Êtes-vous prêt pour l'AI Act ? — ComplyIA",
+  description: "Testez en 2 minutes si votre entreprise est concernée par les obligations AI Act.",
+}
+
 export default function QuizPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-bold mb-4">
-        Êtes-vous concerné par l&apos;AI Act ?
-      </h1>
-      <p className="text-muted-foreground">Quiz en cours de construction</p>
+    <main className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        <QuizWizard />
+      </div>
     </main>
   )
 }
