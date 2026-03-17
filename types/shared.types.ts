@@ -87,3 +87,32 @@ export const OBLIGATION_CODES: ObligationCode[] = [
   'signalement_incidents',
   'politique_interne',
 ]
+
+// ---------------------------------------------------------------------------
+// Entités base de données
+// ---------------------------------------------------------------------------
+
+export type ChecklistItem = {
+  id: string
+  organization_id: string
+  systeme_id: string | null
+  obligation_code: ObligationCode
+  statut: StatutConformite
+  notes: string | null
+  completed_at: string | null
+  completed_by: string | null
+}
+
+export type LiteracyCompletion = {
+  module_id: string
+  completed_at: string | null
+  score: number | null
+}
+
+// ---------------------------------------------------------------------------
+// Guards plans
+// ---------------------------------------------------------------------------
+
+export type PlanGuardResult =
+  | { allowed: true }
+  | { allowed: false; reason: string; upgrade_to: Plan }

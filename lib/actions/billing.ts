@@ -1,46 +1,70 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 import { getOrCreateStripeCustomer, getStripe } from '@/lib/stripe/sync'
 import { PLANS } from '@/lib/stripe/config'
-import type { ActionResult } from '@/types/shared.types'
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRecord = Record<string, any>
+import type { ActionResult, Organization, Profile } from '@/types/shared.types'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
-async function getAuthOrgContext() {
+// ---------------------------------------------------------------------------
+// Schemas Zod
+// ---------------------------------------------------------------------------
+
+const checkoutSchema = z.object({
+  priceId: z.string().min(1, 'priceId requis').startsWith('price_', 'priceId invalide'),
+})
+
+// ---------------------------------------------------------------------------
+// Helper auth + org
+// ---------------------------------------------------------------------------
+
+type OrgContext =
+  | { error: string; supabase: null; user: null; org: null }
+  | {
+      error: null
+      supabase: Awaited<ReturnType<typeof createServerClient>>
+      user: { id: string; email?: string | null }
+      org: Pick<Organization, 'id' | 'plan' | 'stripe_customer_id' | 'nom'>
+    }
+
+async function getAuthOrgContext(): Promise<OrgContext> {
   const supabase = await createServerClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: 'Non authentifié' as const, supabase, user: null, org: null }
+  if (!user) return { error: 'Non authentifié', supabase: null, user: null, org: null }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as unknown as any
+
   const { data: profile } = (await db
     .from('profiles')
     .select('organization_id')
     .eq('id', user.id)
-    .single()) as { data: AnyRecord | null }
+    .single()) as { data: Pick<Profile, 'organization_id'> | null }
 
   if (!profile?.organization_id) {
-    return { error: 'Organisation non trouvée' as const, supabase, user: null, org: null }
+    return { error: 'Organisation non trouvée', supabase: null, user: null, org: null }
   }
 
   const { data: org } = (await db
     .from('organizations')
     .select('id, plan, stripe_customer_id, nom')
     .eq('id', profile.organization_id)
-    .single()) as { data: AnyRecord | null }
+    .single()) as { data: Pick<Organization, 'id' | 'plan' | 'stripe_customer_id' | 'nom'> | null }
 
   if (!org) {
-    return { error: 'Organisation non trouvée' as const, supabase, user: null, org: null }
+    return { error: 'Organisation non trouvée', supabase: null, user: null, org: null }
   }
 
   return { error: null, supabase, user, org }
 }
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
 
 /**
  * Crée une session Checkout Stripe pour souscrire à un plan payant.
@@ -48,21 +72,27 @@ async function getAuthOrgContext() {
 export async function createCheckoutSession(
   priceId: string
 ): Promise<ActionResult<{ url: string }>> {
+  // Validation Zod
+  const parsed = checkoutSchema.safeParse({ priceId })
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message }
+  }
+
   const { error, user, org } = await getAuthOrgContext()
   if (error || !user || !org) return { success: false, error: error ?? 'Erreur inconnue' }
 
   try {
     const customerId = await getOrCreateStripeCustomer(
-      org.id as string,
+      org.id,
       user.email ?? '',
-      org.nom as string
+      org.nom
     )
 
     const stripe = getStripe()
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: parsed.data.priceId, quantity: 1 }],
       success_url: `${APP_URL}/dashboard/plans?success=1`,
       cancel_url: `${APP_URL}/dashboard/plans?canceled=1`,
       allow_promotion_codes: true,
@@ -72,8 +102,8 @@ export async function createCheckoutSession(
     if (!session.url) return { success: false, error: 'URL de paiement indisponible' }
     return { success: true, data: { url: session.url } }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Erreur Stripe'
-    return { success: false, error: message }
+    console.error('createCheckoutSession error:', err)
+    return { success: false, error: 'Erreur lors de la création de la session de paiement' }
   }
 }
 
@@ -84,7 +114,7 @@ export async function createBillingPortalSession(): Promise<ActionResult<{ url: 
   const { error, org } = await getAuthOrgContext()
   if (error || !org) return { success: false, error: error ?? 'Erreur inconnue' }
 
-  const customerId = org.stripe_customer_id as string | null
+  const customerId = org.stripe_customer_id
   if (!customerId) {
     return { success: false, error: 'Aucun abonnement actif' }
   }
@@ -97,8 +127,8 @@ export async function createBillingPortalSession(): Promise<ActionResult<{ url: 
     })
     return { success: true, data: { url: session.url } }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Erreur Stripe'
-    return { success: false, error: message }
+    console.error('createBillingPortalSession error:', err)
+    return { success: false, error: 'Erreur lors de l\'accès au portail de facturation' }
   }
 }
 
@@ -113,7 +143,7 @@ export async function getCurrentPlan(): Promise<
   }>
 > {
   const { error, org, supabase } = await getAuthOrgContext()
-  if (error || !org) return { success: false, error: error ?? 'Erreur inconnue' }
+  if (error || !org || !supabase) return { success: false, error: error ?? 'Erreur inconnue' }
 
   const plan = (org.plan as keyof typeof PLANS) ?? 'gratuit'
   const limits = PLANS[plan]

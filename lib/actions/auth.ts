@@ -26,7 +26,10 @@ export async function signIn(formData: FormData): Promise<ActionResult<void>> {
     password: parsed.data.password,
   })
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error('[auth] signIn error:', error.message)
+    return { success: false, error: 'Email ou mot de passe incorrect' }
+  }
 
   const {
     data: { user },
@@ -68,7 +71,10 @@ export async function signUp(formData: FormData): Promise<ActionResult<void>> {
     password: parsed.data.password,
   })
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error('[auth] signUp error:', error.message)
+    return { success: false, error: "Erreur lors de la création du compte. Veuillez réessayer." }
+  }
 
   redirect('/onboarding')
 }

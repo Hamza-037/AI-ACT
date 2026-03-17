@@ -45,7 +45,10 @@ export async function getSystems(): Promise<ActionResult<SystemeIA[]>> {
     error: { message: string } | null
   }
 
-  if (dbError) return { success: false, error: dbError.message }
+  if (dbError) {
+    console.error('[systemes] getSystems error:', dbError.message)
+    return { success: false, error: 'Erreur lors de la récupération des systèmes' }
+  }
   return { success: true, data: (data ?? []) as unknown as SystemeIA[] }
 }
 
@@ -62,7 +65,10 @@ export async function getSystemById(id: string): Promise<ActionResult<SystemeIA>
     .eq('organization_id', orgId)
     .single()) as { data: AnyRecord | null; error: { message: string } | null }
 
-  if (dbError) return { success: false, error: dbError.message }
+  if (dbError) {
+    console.error('[systemes] getSystemById error:', dbError.message)
+    return { success: false, error: 'Système introuvable' }
+  }
   if (!data) return { success: false, error: 'Système introuvable' }
   return { success: true, data: data as unknown as SystemeIA }
 }
@@ -103,7 +109,10 @@ export async function createSystem(formData: unknown): Promise<ActionResult<Syst
     .select()
     .single()) as { data: AnyRecord | null; error: { message: string } | null }
 
-  if (dbError) return { success: false, error: dbError.message }
+  if (dbError) {
+    console.error('[systemes] createSystem error:', dbError.message)
+    return { success: false, error: 'Erreur lors de la création du système' }
+  }
 
   revalidatePath('/dashboard/registre')
   return { success: true, data: data as unknown as SystemeIA }
@@ -150,7 +159,10 @@ export async function updateSystem(
     .select()
     .single()) as { data: AnyRecord | null; error: { message: string } | null }
 
-  if (dbError) return { success: false, error: dbError.message }
+  if (dbError) {
+    console.error('[systemes] updateSystem error:', dbError.message)
+    return { success: false, error: 'Erreur lors de la mise à jour du système' }
+  }
 
   revalidatePath('/dashboard/registre')
   revalidatePath(`/dashboard/registre/${id}`)
@@ -169,7 +181,10 @@ export async function deleteSystem(id: string): Promise<ActionResult<void>> {
     .eq('id', id)
     .eq('organization_id', orgId)) as { error: { message: string } | null }
 
-  if (dbError) return { success: false, error: dbError.message }
+  if (dbError) {
+    console.error('[systemes] deleteSystem error:', dbError.message)
+    return { success: false, error: 'Erreur lors de la suppression du système' }
+  }
 
   revalidatePath('/dashboard/registre')
   return { success: true, data: undefined }

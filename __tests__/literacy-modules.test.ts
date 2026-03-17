@@ -69,9 +69,9 @@ describe('completeModule — action literacy', () => {
 
   it('completeModule accepte un moduleId valide avec un score de 100', () => {
     // Test unitaire : vérifie que module-1 existe bien dans les modules
-    const module = getModuleById('module-1')
-    expect(module).toBeDefined()
-    expect(module?.id).toBe('module-1')
+    const foundModule = getModuleById('module-1')
+    expect(foundModule).toBeDefined()
+    expect(foundModule?.id).toBe('module-1')
     // Score 100 est une valeur attendue pour les réussites parfaites
     expect(100).toBeGreaterThanOrEqual(0)
     expect(100).toBeLessThanOrEqual(100)

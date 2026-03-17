@@ -3,11 +3,23 @@ import { getServiceRoleClient } from '@/lib/supabase/service'
 import { PRICE_TO_PLAN } from '@/lib/stripe/config'
 import type { Plan } from '@/types/shared.types'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRecord = Record<string, any>
+// Typed interface for service-role Supabase client usage in this file
+type ServiceDb = {
+  from: (table: string) => {
+    select: (cols: string) => {
+      eq: (col: string, val: string) => {
+        single: () => Promise<{ data: { stripe_customer_id?: string; stripe_subscription_id?: string } | null; error: unknown }>
+      }
+    }
+    update: (data: Record<string, unknown>) => {
+      eq: (col: string, val: string) => Promise<{ error: unknown }>
+    }
+  }
+}
 
 export function getStripe(): Stripe {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-02-25.clover' })
+  if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY manquant')
+  return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' })
 }
 
 export function getPlanFromPriceId(priceId: string): Plan {
@@ -23,16 +35,16 @@ export async function getOrCreateStripeCustomer(
   email: string,
   nom: string
 ): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getServiceRoleClient() as unknown as any
-  const { data: org } = (await supabase
+  const supabase = getServiceRoleClient() as unknown as ServiceDb
+
+  const { data: org } = await supabase
     .from('organizations')
     .select('stripe_customer_id')
     .eq('id', organizationId)
-    .single()) as { data: AnyRecord | null }
+    .single()
 
   if (org?.stripe_customer_id) {
-    return org.stripe_customer_id as string
+    return org.stripe_customer_id
   }
 
   const stripe = getStripe()
@@ -57,8 +69,7 @@ export async function syncPlanFromStripe(
   customerId: string,
   plan: 'starter' | 'pro' | 'expert' | 'gratuit'
 ): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getServiceRoleClient() as unknown as any
+  const supabase = getServiceRoleClient() as unknown as ServiceDb
   await supabase
     .from('organizations')
     .update({ plan })
@@ -69,17 +80,17 @@ export async function syncPlanFromStripe(
  * Annule l'abonnement actif d'une organisation et la repasse en plan gratuit.
  */
 export async function cancelSubscription(organizationId: string): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getServiceRoleClient() as unknown as any
-  const { data: org } = (await supabase
+  const supabase = getServiceRoleClient() as unknown as ServiceDb
+
+  const { data: org } = await supabase
     .from('organizations')
     .select('stripe_subscription_id')
     .eq('id', organizationId)
-    .single()) as { data: AnyRecord | null }
+    .single()
 
   if (org?.stripe_subscription_id) {
     const stripe = getStripe()
-    await stripe.subscriptions.cancel(org.stripe_subscription_id as string)
+    await stripe.subscriptions.cancel(org.stripe_subscription_id)
   }
 
   await supabase

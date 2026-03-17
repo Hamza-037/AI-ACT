@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, CheckCircle, AlertCircle, XCircle, Mail, Home } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle, AlertCircle, XCircle, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 
 export type QuizQuestion = {
@@ -16,21 +16,21 @@ export type QuizQuestion = {
 export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 'taille',
-    question: 'Combien de salariés dans votre entreprise ?',
+    question: 'Combien de salaries dans votre entreprise ?',
     description: "Les obligations varient selon la taille de l'entreprise.",
     type: 'single',
     options: [
-      { value: 'micro', label: 'Moins de 10 salariés', risque_score: 0 },
-      { value: 'pme_small', label: '10 à 49 salariés', risque_score: 1 },
-      { value: 'pme_mid', label: '50 à 249 salariés', risque_score: 2 },
-      { value: 'pme_large', label: '250 à 499 salariés', risque_score: 3 },
-      { value: 'eti', label: '500 salariés et plus', risque_score: 3 },
+      { value: 'micro', label: 'Moins de 10 salaries', risque_score: 0 },
+      { value: 'pme_small', label: '10 a 49 salaries', risque_score: 1 },
+      { value: 'pme_mid', label: '50 a 249 salaries', risque_score: 2 },
+      { value: 'pme_large', label: '250 a 499 salaries', risque_score: 3 },
+      { value: 'eti', label: '500 salaries et plus', risque_score: 3 },
     ],
   },
   {
     id: 'rh_ia',
     question: 'Utilisez-vous des outils IA pour les ressources humaines ?',
-    description: "Tri de CV, évaluation de performance, scoring de candidats, détection d'émotions...",
+    description: "Tri de CV, evaluation de performance, scoring de candidats, detection d'emotions...",
     type: 'single',
     options: [
       { value: 'oui', label: 'Oui', risque_score: 5 },
@@ -40,8 +40,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 'scoring',
-    question: "Utilisez-vous des outils de scoring ou d'évaluation automatique de clients ?",
-    description: "Scoring crédit, évaluation de solvabilité, scoring assurance, CRM prédictif...",
+    question: "Utilisez-vous des outils de scoring ou d'evaluation automatique de clients ?",
+    description: "Scoring credit, evaluation de solvabilite, scoring assurance, CRM predictif...",
     type: 'single',
     options: [
       { value: 'oui', label: 'Oui', risque_score: 5 },
@@ -51,22 +51,22 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 'chatbot',
-    question: 'Avez-vous un chatbot ou assistant IA en contact avec vos clients ou salariés ?',
+    question: 'Avez-vous un chatbot ou assistant IA en contact avec vos clients ou salaries ?',
     description: 'Sur votre site web, votre application, ou en interne.',
     type: 'single',
     options: [
-      { value: 'oui_decisionnaire', label: 'Oui, et il prend des décisions automatiquement', risque_score: 4 },
+      { value: 'oui_decisionnaire', label: 'Oui, et il prend des decisions automatiquement', risque_score: 4 },
       { value: 'oui_info', label: 'Oui, uniquement pour informer', risque_score: 1 },
       { value: 'non', label: 'Non', risque_score: 0 },
     ],
   },
   {
     id: 'copilot',
-    question: 'Vos salariés utilisent-ils des outils IA au quotidien ?',
-    description: 'Microsoft Copilot, ChatGPT, GitHub Copilot, Gemini, outils IA intégrés à vos logiciels...',
+    question: 'Vos salaries utilisent-ils des outils IA au quotidien ?',
+    description: 'Microsoft Copilot, ChatGPT, GitHub Copilot, Gemini, outils IA integres a vos logiciels...',
     type: 'single',
     options: [
-      { value: 'tous', label: 'Oui, la plupart des salariés', risque_score: 3 },
+      { value: 'tous', label: 'Oui, la plupart des salaries', risque_score: 3 },
       { value: 'certains', label: 'Oui, quelques-uns', risque_score: 2 },
       { value: 'rare', label: 'Rarement', risque_score: 1 },
       { value: 'non', label: 'Non', risque_score: 0 },
@@ -85,21 +85,21 @@ export function calculateResult(scores: number[]): QuizResult {
   if (total >= 10) {
     return {
       niveau: 'eleve',
-      obligations: ['AI Literacy immédiate', 'Inventaire systèmes IA', 'Supervision humaine', 'Documentation technique'],
-      message: 'Votre entreprise a des obligations importantes. Une action immédiate est recommandée.',
+      obligations: ['AI Literacy immediate', 'Inventaire systemes IA', 'Supervision humaine', 'Documentation technique'],
+      message: 'Votre entreprise a des obligations importantes. Une action immediate est recommandee.',
     }
   }
   if (total >= 5) {
     return {
       niveau: 'modere',
-      obligations: ['AI Literacy immédiate', 'Inventaire systèmes IA'],
-      message: 'Votre entreprise est concernée par plusieurs obligations AI Act.',
+      obligations: ['AI Literacy immediate', 'Inventaire systemes IA'],
+      message: 'Votre entreprise est concernee par plusieurs obligations AI Act.',
     }
   }
   return {
     niveau: 'faible',
-    obligations: ["AI Literacy recommandée"],
-    message: "Votre exposition est limitée, mais l'AI Literacy s'applique déjà.",
+    obligations: ["AI Literacy recommandee"],
+    message: "Votre exposition est limitee, mais l'AI Literacy s'applique deja.",
   }
 }
 
@@ -113,35 +113,29 @@ function getScoreForAnswer(questionIndex: number, answerValue: string): number {
 const NIVEAU_CONFIG = {
   faible: {
     label: 'Exposition faible',
-    textColor: 'text-green-700',
-    circleBg: 'bg-green-100',
-    circleText: 'text-green-700',
-    circleBorder: 'border-green-300',
     icon: CheckCircle,
     iconColor: 'text-green-600',
-    badgeBg: 'bg-green-50 border-green-200',
+    labelColor: 'text-green-700',
+    badgeBg: 'bg-green-50',
+    badgeBorder: 'border-green-200',
     badgeText: 'text-green-700',
   },
   modere: {
-    label: 'Exposition modérée',
-    textColor: 'text-orange-700',
-    circleBg: 'bg-orange-100',
-    circleText: 'text-orange-700',
-    circleBorder: 'border-orange-300',
+    label: 'Exposition moderee',
     icon: AlertCircle,
-    iconColor: 'text-orange-600',
-    badgeBg: 'bg-orange-50 border-orange-200',
+    iconColor: 'text-orange-500',
+    labelColor: 'text-orange-700',
+    badgeBg: 'bg-orange-50',
+    badgeBorder: 'border-orange-200',
     badgeText: 'text-orange-700',
   },
   eleve: {
-    label: 'Exposition élevée',
-    textColor: 'text-red-700',
-    circleBg: 'bg-red-100',
-    circleText: 'text-red-700',
-    circleBorder: 'border-red-300',
+    label: 'Exposition elevee',
     icon: XCircle,
-    iconColor: 'text-red-600',
-    badgeBg: 'bg-red-50 border-red-200',
+    iconColor: 'text-red-500',
+    labelColor: 'text-red-700',
+    badgeBg: 'bg-red-50',
+    badgeBorder: 'border-red-200',
     badgeText: 'text-red-700',
   },
 }
@@ -191,50 +185,51 @@ export function QuizWizard() {
         // localStorage not available
       }
       setEmailSubmitted(true)
-      toast.success('Rapport envoyé par email')
+      toast.success('Rapport envoye par email')
     }
   }
 
   if (showResult) {
     return (
       <div className="space-y-6">
-        {/* Score circle */}
-        <div className="text-center space-y-4">
-          <div
-            className={`w-28 h-28 rounded-full mx-auto flex flex-col items-center justify-center border-4 ${config.circleBg} ${config.circleBorder}`}
-          >
-            <NiveauIcon className={`h-8 w-8 ${config.iconColor}`} />
-            <span className={`text-xs font-semibold mt-1 ${config.circleText} leading-tight text-center px-1`}>
-              {result.niveau === 'faible' ? 'Faible' : result.niveau === 'modere' ? 'Modéré' : 'Élevé'}
-            </span>
+        {/* En-tete resultat */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-4">
+          <div className="flex justify-center">
+            <NiveauIcon className={`h-12 w-12 ${config.iconColor}`} />
           </div>
           <div>
-            <h2 className={`text-2xl font-bold ${config.textColor}`}>{config.label}</h2>
-            <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">{result.message}</p>
+            <h2 className={`text-2xl font-bold ${config.labelColor}`}>{config.label}</h2>
+            <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto leading-relaxed">
+              {result.message}
+            </p>
           </div>
         </div>
 
-        {/* Obligations */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Vos obligations identifiées</h3>
+        {/* Obligations identifiees */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <h3 className="text-xl font-semibold text-slate-900 mb-4">
+            Vos obligations identifiees
+          </h3>
           <ul className="space-y-3">
             {result.obligations.map((obligation) => (
               <li key={obligation} className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                <span className="text-sm text-gray-700">{obligation}</span>
+                <div className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                <span className="text-sm text-slate-600 leading-relaxed">{obligation}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Email capture */}
+        {/* Email optionnel */}
         {!emailSubmitted && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <div className="flex items-start gap-3 mb-4">
-              <Mail className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+              <Mail className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
               <div>
-                <p className="font-medium text-sm text-gray-900">Recevoir le rapport détaillé</p>
-                <p className="text-xs text-gray-400 mt-0.5">Optionnel — votre plan d&apos;action personnalisé par email</p>
+                <p className="text-sm font-medium text-slate-900">Recevoir le rapport detaille</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Optionnel — votre plan d&apos;action personnalise par email
+                </p>
               </div>
             </div>
             <form onSubmit={handleEmailSubmit} className="flex gap-2">
@@ -243,11 +238,11 @@ export function QuizWizard() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre@email.fr"
-                className="flex-1 h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="flex-1 h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-shadow"
               />
               <button
                 type="submit"
-                className="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                className="h-10 px-4 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors"
               >
                 Envoyer
               </button>
@@ -255,74 +250,57 @@ export function QuizWizard() {
           </div>
         )}
 
-        {/* CTAs */}
-        <div className="flex flex-col gap-3 pt-2">
-          <Link
-            href="/signup"
-            className="w-full h-12 inline-flex items-center justify-center rounded-lg bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
-          >
-            Creer mon compte
-          </Link>
-          <Link
-            href="/"
-            className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-lg border-2 border-gray-200 bg-white text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors"
-          >
-            <Home className="h-4 w-4" />
-            Retour a l&apos;accueil
-          </Link>
-        </div>
+        {/* CTA principal */}
+        <Link
+          href="/signup"
+          className="w-full h-12 inline-flex items-center justify-center rounded-xl bg-slate-900 text-white font-semibold text-sm hover:bg-slate-800 transition-colors"
+        >
+          Creer mon compte — c&apos;est gratuit
+        </Link>
       </div>
     )
   }
 
+  const progressPct = ((currentStep) / totalSteps) * 100
+
   return (
     <div className="space-y-6">
-      {/* Progress circles */}
-      <div className="flex items-center">
-        {QUIZ_QUESTIONS.map((_, i) => (
-          <div key={i} className="flex items-center flex-1 last:flex-none">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all flex-shrink-0 ${
-                i <= currentStep
-                  ? 'bg-blue-600 border-blue-600 text-white'
-                  : 'border-gray-300 text-gray-400 bg-white'
-              }`}
-            >
-              {i + 1}
-            </div>
-            {i < QUIZ_QUESTIONS.length - 1 && (
-              <div
-                className={`flex-1 h-0.5 mx-1 transition-all ${
-                  i < currentStep ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Question card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-5">
-        <div>
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+      {/* Barre de progression fine */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">
             Question {currentStep + 1} sur {totalSteps}
           </p>
-          <h2 className="text-xl font-bold text-gray-900 leading-snug">{question.question}</h2>
-          <p className="text-sm text-gray-500 mt-1">{question.description}</p>
+        </div>
+        <div className="h-0.5 w-full rounded-full bg-slate-200 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-slate-900 transition-all duration-300"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Question */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 leading-snug">
+            {question.question}
+          </h2>
+          <p className="text-sm text-slate-500 mt-2 leading-relaxed">{question.description}</p>
         </div>
 
         {/* Options */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {question.options.map((option) => {
             const isSelected = currentAnswer === option.value
             return (
               <button
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
-                className={`w-full h-12 px-4 rounded-lg border-2 text-left text-sm font-medium transition-all duration-150 ${
+                className={`w-full h-auto min-h-12 px-5 py-3 rounded-xl border-2 text-left text-sm transition-all duration-150 ${
                   isSelected
-                    ? 'border-blue-600 bg-blue-50 text-blue-900'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-slate-900 bg-slate-50 text-slate-900 font-medium'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
                 }`}
               >
                 {option.label}
@@ -337,17 +315,17 @@ export function QuizWizard() {
         <button
           onClick={handlePrev}
           disabled={currentStep === 0}
-          className="inline-flex items-center gap-1 h-10 px-4 rounded-lg border-2 border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="h-4 w-4" />
-          Précédent
+          Precedent
         </button>
         <button
           onClick={handleNext}
           disabled={!currentAnswer}
-          className="inline-flex items-center gap-1 h-12 px-8 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 h-11 px-8 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {currentStep < totalSteps - 1 ? 'Suivant' : 'Voir mon résultat'}
+          {currentStep < totalSteps - 1 ? 'Continuer' : 'Voir mon resultat'}
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>

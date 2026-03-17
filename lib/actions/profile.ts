@@ -91,7 +91,10 @@ export async function completeOnboarding(
     .select('id')
     .single()) as { data: AnyRecord | null; error: { message: string } | null }
 
-  if (orgError) return { success: false, error: orgError.message }
+  if (orgError) {
+    console.error('[profile] completeOnboarding org error:', orgError.message)
+    return { success: false, error: "Impossible de créer l'organisation" }
+  }
   if (!org) return { success: false, error: "Impossible de créer l'organisation" }
 
   const organizationId = org.id as string
@@ -108,7 +111,10 @@ export async function completeOnboarding(
     })
     .eq('id', user.id)) as { error: { message: string } | null }
 
-  if (profileError) return { success: false, error: profileError.message }
+  if (profileError) {
+    console.error('[profile] completeOnboarding profile error:', profileError.message)
+    return { success: false, error: 'Erreur lors de la configuration du profil' }
+  }
 
   // 3. Créer les systèmes IA placeholder (filtrer "Aucun pour l'instant")
   const outilsActifs = data.outilsIA.filter((o) => o !== "Aucun pour l'instant")
@@ -129,7 +135,10 @@ export async function completeOnboarding(
         .from('systemes_ia')
         .insert(systemes)) as { error: { message: string } | null }
 
-      if (systemesError) return { success: false, error: systemesError.message }
+      if (systemesError) {
+        console.error('[profile] completeOnboarding systemes error:', systemesError.message)
+        return { success: false, error: "Erreur lors de l'initialisation de l'inventaire" }
+      }
     }
   }
 
@@ -152,7 +161,10 @@ export async function getProfile(): Promise<ActionResult<Profile>> {
     .eq('id', user.id)
     .single()) as { data: AnyRecord | null; error: { message: string } | null }
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error('[profile] getProfile error:', error.message)
+    return { success: false, error: 'Erreur lors de la récupération du profil' }
+  }
   return { success: true, data: data as unknown as Profile }
 }
 
@@ -185,6 +197,9 @@ export async function updateOrganization(formData: FormData): Promise<ActionResu
     .update(parsed.data)
     .eq('id', profile.organization_id)) as { error: { message: string } | null }
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error('[profile] updateOrganization error:', error.message)
+    return { success: false, error: "Erreur lors de la mise à jour de l'organisation" }
+  }
   return { success: true, data: undefined }
 }

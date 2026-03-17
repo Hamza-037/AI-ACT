@@ -1,9 +1,7 @@
 import { PLANS } from '@/lib/stripe/config'
-import type { Plan } from '@/types/shared.types'
+import type { Plan, PlanGuardResult } from '@/types/shared.types'
 
-export type PlanGuardResult =
-  | { allowed: true }
-  | { allowed: false; reason: string; upgrade_to: Plan }
+export type { PlanGuardResult }
 
 export function canAddSysteme(currentPlan: Plan, currentCount: number): PlanGuardResult {
   const limits = PLANS[currentPlan]

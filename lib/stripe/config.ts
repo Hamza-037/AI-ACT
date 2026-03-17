@@ -5,8 +5,21 @@ export const PLANS = {
   expert: { nom: 'Expert', prix: 59900, systemes_max: -1, utilisateurs_max: 20 },
 } as const
 
-export const PRICE_TO_PLAN: Record<string, 'starter' | 'pro' | 'expert'> = {
-  [process.env.STRIPE_PRICE_STARTER ?? '']: 'starter',
-  [process.env.STRIPE_PRICE_PRO ?? '']: 'pro',
-  [process.env.STRIPE_PRICE_EXPERT ?? '']: 'expert',
+/**
+ * Mapping priceId → plan.
+ * Les clés vides (variables d'env absentes) sont exclues pour éviter des faux positifs.
+ */
+function buildPriceToPlan(): Record<string, 'starter' | 'pro' | 'expert'> {
+  const map: Record<string, 'starter' | 'pro' | 'expert'> = {}
+  const entries: Array<[string | undefined, 'starter' | 'pro' | 'expert']> = [
+    [process.env.STRIPE_PRICE_STARTER, 'starter'],
+    [process.env.STRIPE_PRICE_PRO, 'pro'],
+    [process.env.STRIPE_PRICE_EXPERT, 'expert'],
+  ]
+  for (const [priceId, plan] of entries) {
+    if (priceId) map[priceId] = plan
+  }
+  return map
 }
+
+export const PRICE_TO_PLAN: Record<string, 'starter' | 'pro' | 'expert'> = buildPriceToPlan()
