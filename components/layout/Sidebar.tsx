@@ -10,16 +10,19 @@ import {
   GraduationCap,
   Settings,
   LogOut,
+  CreditCard,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/actions/auth'
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
   { href: '/dashboard/registre', label: 'Registre IA', icon: Bot },
   { href: '/dashboard/checklist', label: 'Checklist', icon: ClipboardCheck },
-  { href: '/dashboard/documents', label: 'Documents', icon: FileText },
   { href: '/dashboard/literacy', label: 'AI Literacy', icon: GraduationCap },
+  { href: '/dashboard/documents', label: 'Documents', icon: FileText },
+  { href: '/dashboard/plans', label: 'Abonnement', icon: CreditCard },
   { href: '/dashboard/parametres', label: 'Parametres', icon: Settings },
 ]
 
@@ -27,14 +30,19 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 border-r min-h-screen flex flex-col bg-background">
-      <div className="p-4 border-b">
-        <Link href="/dashboard" className="text-lg font-bold tracking-tight">
-          aiactio
+    <aside className="w-64 border-r min-h-screen flex flex-col bg-slate-950">
+      {/* Logo */}
+      <div className="p-5 border-b border-slate-800">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-4 w-4 text-white" />
+          </div>
+          <span className="text-base font-bold text-white tracking-tight">aiactio</span>
         </Link>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
+      {/* Nav */}
+      <nav className="flex-1 p-3 space-y-0.5">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive =
@@ -47,10 +55,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 h-10 px-3 text-sm font-medium rounded-md transition-colors',
+                'flex items-center gap-3 h-10 px-3 text-sm font-medium rounded-lg transition-colors',
                 isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -60,11 +68,12 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-3 border-t">
+      {/* Footer */}
+      <div className="p-3 border-t border-slate-800">
         <form action={signOut}>
           <button
             type="submit"
-            className="flex items-center gap-3 w-full h-10 px-3 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="flex items-center gap-3 w-full h-10 px-3 text-sm font-medium rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             Se deconnecter

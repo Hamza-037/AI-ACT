@@ -1,25 +1,22 @@
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoginForm } from './LoginForm'
 
 export default function LoginPage() {
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center">Connexion</CardTitle>
-        <p className="text-sm text-center text-muted-foreground">
-          Connectez-vous à votre espace aiactio
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-slate-900">Bon retour</h1>
+        <p className="text-sm text-slate-500">
+          Connectez-vous a votre espace conformite AI Act
         </p>
-      </CardHeader>
-      <CardContent>
-        <LoginForm />
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Pas encore de compte ?{' '}
-          <Link href="/signup" className="text-primary hover:underline font-medium">
-            S&apos;inscrire
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+      <LoginForm />
+      <p className="text-center text-sm text-slate-500">
+        Pas encore de compte ?{' '}
+        <Link href="/signup" className="text-blue-600 hover:underline font-medium">
+          Creer un compte gratuit
+        </Link>
+      </p>
+    </div>
   )
 }

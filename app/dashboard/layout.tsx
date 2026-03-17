@@ -40,11 +40,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const orgNom = await getOrgNom()
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header orgNom={orgNom} />
-        <main className="flex-1 p-6 md:p-8">{children}</main>
+        <main className="flex-1 p-6 md:p-8 max-w-6xl">{children}</main>
       </div>
     </div>
   )
