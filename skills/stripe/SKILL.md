@@ -1,96 +1,137 @@
 ---
 name: aiactio-stripe
-description: Patterns d'integration Stripe pour aiactio. Utiliser pour toute creation ou modification du checkout, des webhooks, de la synchronisation des plans, des portails de facturation, ou des guards d'acces. Couvre l'idempotence des webhooks, les evenements a ecouter, et la logique de synchronisation plan.
+description: Utiliser quand on modifie le checkout, les webhooks, la synchronisation des plans, le portail de facturation, ou les guards d'acces dans aiactio. Contient les price IDs exacts, les patterns idempotents, les gotchas Stripe frequents, et les evenements a ecouter.
 ---
 
 # Stripe — aiactio
 
-## Configuration
+## Structure du skill
+
+- `references/webhook-events.md` — tous les evenements, ce qu'ils declenchent
+- `references/plan-mapping.md` — price IDs → plans, logique de sync
+- `scripts/verify-webhook.sh` — test local du webhook avec stripe CLI
+
+## Configuration actuelle
 
 - **API version** : `2026-02-25.clover`
-- **Mode actuel** : TEST (`sk_test_...`)
+- **Mode** : TEST (`sk_test_...`) — basculer en LIVE quand deploiement pret
 - **Instanciation** : uniquement via `getStripe()` dans `lib/stripe/sync.ts`
+- **Ne jamais** instancier `new Stripe()` directement ailleurs
 
-## Plans et price IDs
+## Price IDs (TEST)
 
 ```typescript
-// lib/stripe/config.ts
-export const PLANS = { gratuit: 0, starter: 9900, pro: 29900, expert: 59900 } // centimes
-export const PRICE_TO_PLAN: Record<string, Plan> = {
-  [process.env.STRIPE_PRICE_STARTER!]: 'starter',
-  [process.env.STRIPE_PRICE_PRO!]: 'pro',
-  [process.env.STRIPE_PRICE_EXPERT!]: 'expert',
-}
+// lib/stripe/config.ts — source de verite
+STRIPE_PRICE_STARTER = 'price_1TByzZPdu9Gz4yoEj1hVRS4O'   // 99€/mois
+STRIPE_PRICE_PRO     = 'price_1TByzhPdu9Gz4yoEpeEO3Ew2'   // 299€/mois
+STRIPE_PRICE_EXPERT  = 'price_1TByzqPdu9Gz4yoEcBi5qJc6'   // 599€/mois
+```
+
+## Plans et montants
+
+```typescript
+// Toujours en centimes — jamais de float
+export const PLANS = {
+  gratuit: 0,
+  starter: 9900,   // 99€
+  pro: 29900,      // 299€
+  expert: 59900,   // 599€
+} as const
 ```
 
 ## Evenements webhook a traiter
 
-| Evenement | Action |
-|-----------|--------|
-| `checkout.session.completed` | Sync plan depuis subscription |
+| Evenement | Action requise |
+|-----------|---------------|
+| `checkout.session.completed` | Sync plan depuis `subscription` |
 | `invoice.paid` | Confirmer acces, sync plan |
 | `customer.subscription.updated` | Mettre a jour le plan |
 | `customer.subscription.deleted` | Retour plan gratuit |
 
-**Ne pas ecouter** : `invoice.payment_failed` (nice-to-have, pas critique pour le MVP)
+Ne pas traiter : `invoice.payment_failed` (pas critique pour le MVP)
 
-## Pattern webhook idempotent
+## Pattern webhook idempotent complet
 
 ```typescript
-// 1. Verifier signature
-event = await stripe.webhooks.constructEventAsync(body, signature, secret)
-
-// 2. Verifier idempotence (table stripe_webhook_events)
-const { data: existing } = await db.from('stripe_webhook_events')
-  .select('id').eq('stripe_event_id', event.id).single()
-if (existing) return NextResponse.json({ received: true }) // deja traite
-
-// 3. Marquer comme "en cours" avant de traiter
-await db.from('stripe_webhook_events').insert({
-  stripe_event_id: event.id, event_type: event.type, processed_at: new Date().toISOString()
-})
-
-// 4. Traiter l'evenement
-// ...
-
-// maxDuration = 30 sur la route
+// app/api/stripe/webhook/route.ts
 export const maxDuration = 30
-```
 
-## Synchronisation plan
+export async function POST(request: NextRequest) {
+  const body = await request.text()
+  const signature = request.headers.get('stripe-signature')
+  if (!signature) return NextResponse.json({ error: 'No signature' }, { status: 400 })
 
-```typescript
-// lib/stripe/sync.ts
-export async function syncPlanFromStripe(customerId: string, plan: Plan) {
-  const serviceClient = getServiceRoleClient()
-  await serviceClient.from('organizations')
-    .update({ plan })
-    .eq('stripe_customer_id', customerId)
-}
-```
+  let event: Stripe.Event
+  try {
+    event = await stripe.webhooks.constructEventAsync(
+      body, signature, process.env.STRIPE_WEBHOOK_SECRET!
+    )
+  } catch {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  }
 
-## Checkout
+  // Idempotence — verifier si deja traite
+  const supabase = getServiceRoleClient()
+  const { data: existing } = await supabase
+    .from('stripe_webhook_events')
+    .select('id').eq('stripe_event_id', event.id).maybeSingle()
+  if (existing) return NextResponse.json({ received: true })
 
-```typescript
-// lib/actions/billing.ts
-export async function createCheckoutSession(priceId: string): Promise<ActionResult<{url: string}>> {
-  // auth + org check
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    payment_method_types: ['card'],
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=1`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/plans`,
-    customer: stripeCustomerId ?? undefined,
-    client_reference_id: orgId,
+  // Marquer avant traitement (evite les doubles traitements en cas de retry)
+  await supabase.from('stripe_webhook_events').insert({
+    stripe_event_id: event.id,
+    event_type: event.type,
+    processed_at: new Date().toISOString(),
   })
-  return { success: true, data: { url: session.url! } }
+
+  // Dispatcher
+  switch (event.type) {
+    case 'checkout.session.completed':
+      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
+      break
+    case 'customer.subscription.updated':
+    case 'invoice.paid':
+      await handleSubscriptionUpdate(event.data.object)
+      break
+    case 'customer.subscription.deleted':
+      await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
+      break
+  }
+
+  return NextResponse.json({ received: true })
 }
 ```
 
-## Jamais
+## Gotchas — erreurs frequentes
 
-- Exposer `STRIPE_SECRET_KEY` cote client
-- Faire confiance aux donnees webhook sans verifier la signature
-- Traiter deux fois le meme event.id
-- Stocker les prix en dur dans la DB (Stripe = source de verite)
+**G1 : instancier `new Stripe()` au top-level**
+Plante si `STRIPE_SECRET_KEY` est absent (build CI, tests).
+Toujours via `getStripe()` qui lazy-load.
+
+**G2 : ne pas verifier la signature du webhook**
+N'importe qui peut POST sur `/api/stripe/webhook` sans signature.
+`stripe.webhooks.constructEventAsync()` obligatoire.
+
+**G3 : pas d'idempotence sur les webhooks**
+Stripe peut delivrer le meme evenement plusieurs fois (retries).
+Toujours verifier `stripe_webhook_events` avant de traiter.
+
+**G4 : montants en euros au lieu de centimes**
+`price: 99` → Stripe facture 0.99€. Utiliser `price: 9900` pour 99€.
+PLANS toujours en centimes dans `lib/stripe/config.ts`.
+
+**G5 : `invoice.subscription` de type `string | Stripe.Subscription`**
+Le type Stripe est un union — peut etre un ID string ou un objet etendu.
+Utiliser `as unknown as Stripe.Subscription` apres avoir verifie que c'est etendu.
+
+**G6 : redirect apres checkout sans verifier le paiement**
+`checkout.session.completed` ne garantit pas que le paiement est capture.
+Verifier `session.payment_status === 'paid'` avant d'activer l'acces.
+
+**G7 : oublier `maxDuration = 30` sur la route webhook**
+Les webhooks Stripe peuvent timeout sur Vercel avec la limite par defaut de 10s.
+Toujours `export const maxDuration = 30` dans la route.
+
+## Voir aussi
+- `references/webhook-events.md` — detail de chaque evenement et son handler
+- `references/plan-mapping.md` — logique complete de synchronisation des plans
