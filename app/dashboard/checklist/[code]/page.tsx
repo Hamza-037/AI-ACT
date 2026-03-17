@@ -20,7 +20,7 @@ const OBLIGATION_DETAILS: Partial<Record<ObligationCode, ObligationDetail>> = {
       "Identifier les salaries utilisant des outils IA (Copilot, ChatGPT, Gemini, etc.)",
       "Organiser une formation de 30 a 60 minutes sur les bases de l'IA",
       "Conserver les attestations de formation pour chaque salarie",
-      "Utiliser le module AI Literacy de ComplyIA pour automatiser le suivi",
+      "Utiliser le module AI Literacy de aiactio pour automatiser le suivi",
     ],
     ressources: [
       { label: "Texte officiel AI Act - Article 4", url: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689" },
@@ -34,7 +34,7 @@ const OBLIGATION_DETAILS: Partial<Record<ObligationCode, ObligationDetail>> = {
       "Lister tous les outils IA utilises (CRM, chatbot, outils RH, Microsoft Copilot, etc.)",
       "Classifier chaque systeme par niveau de risque (interdit / haut risque / limite / minimal)",
       "Designer un responsable humain pour chaque systeme",
-      "Utiliser le module Registre IA de ComplyIA pour gerer l'inventaire",
+      "Utiliser le module Registre IA de aiactio pour gerer l'inventaire",
     ],
     ressources: [
       { label: "AI Act - Annexe III (systemes haut risque)", url: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689" },

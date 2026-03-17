@@ -1,7 +1,7 @@
 import { QuizWizard } from '@/components/quiz/QuizWizard'
 
 export const metadata = {
-  title: "Êtes-vous prêt pour l'AI Act ? — ComplyIA",
+  title: "Êtes-vous prêt pour l'AI Act ? — aiactio",
   description: "Testez en 2 minutes si votre entreprise est concernée par les obligations AI Act.",
 }
 

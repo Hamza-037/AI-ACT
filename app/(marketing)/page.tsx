@@ -141,7 +141,7 @@ export default function HomePage() {
                 <span className="text-sm text-right text-muted-foreground">50 000€+/an</span>
               </div>
               <div className="grid grid-cols-2 px-6 py-4 bg-primary/5">
-                <span className="text-sm font-semibold text-primary">ComplyIA</span>
+                <span className="text-sm font-semibold text-primary">aiactio</span>
                 <span className="text-sm text-right font-semibold text-primary">à partir de 99€/mois</span>
               </div>
             </div>

@@ -30,7 +30,7 @@ export function Sidebar() {
     <aside className="w-64 border-r min-h-screen flex flex-col bg-background">
       <div className="p-4 border-b">
         <Link href="/dashboard" className="text-lg font-bold tracking-tight">
-          ComplyIA
+          aiactio
         </Link>
       </div>
 

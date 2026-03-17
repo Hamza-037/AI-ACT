@@ -8,7 +8,7 @@ export default function LoginPage() {
       <CardHeader>
         <CardTitle className="text-2xl text-center">Connexion</CardTitle>
         <p className="text-sm text-center text-muted-foreground">
-          Connectez-vous à votre espace ComplyIA
+          Connectez-vous à votre espace aiactio
         </p>
       </CardHeader>
       <CardContent>

@@ -26,7 +26,7 @@ export async function ai(options: {
       Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'https://aiactio.fr',
-      'X-Title': 'ComplyIA',
+      'X-Title': 'aiactio',
     },
     body: JSON.stringify({
       model: options.model,
