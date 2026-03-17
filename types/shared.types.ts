@@ -73,5 +73,6 @@ export type Profile = {
   role: UserRole
   nom: string | null
   prenom: string | null
+  onboarding_completed: boolean
   created_at: string
 }
