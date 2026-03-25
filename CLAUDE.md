@@ -2,6 +2,13 @@
 
 > Lis ce fichier en entier avant toute action. Ces règles sont non négociables.
 
+## 0. HARNESS OBLIGATOIRE
+
+**Toute feature ou refonte → Planner → Generator → Evaluator. Sans exception.**
+- Feature / composant → harness complet (lire `~/projects/Tarvio/.harness/HARNESS.md` pour le modèle)
+- Hotfix 1 ligne → commit direct autorisé
+- Aucun commit de feature sans Evaluator PASS (lint + tsc + build + tests + critères contract)
+
 ## Projet
 
 SaaS de conformité AI Act pour PME françaises. Positionnement : ultra-simple, self-service, prix accessible (vs concurrents à 50k€+/an qui visent les grands groupes).
